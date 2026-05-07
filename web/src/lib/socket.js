@@ -7,7 +7,21 @@ export const useSocketStore = create((set, get) => ({
   socket: null,
   onlineUsers: new Set(),
   typingUsers: new Map(), // chatId -> userId
+  unreadCounts: new Map(), // chatId -> unread count
+  activeChatId: null,
   queryClient: null,
+
+  setActiveChatId: (chatId) => {
+    set({ activeChatId: chatId });
+    // clear unread for the chat being opened
+    if (chatId) {
+      set((state) => {
+        const unreadCounts = new Map(state.unreadCounts);
+        unreadCounts.delete(chatId);
+        return { unreadCounts };
+      });
+    }
+  },
 
   connect: (token, queryClient) => {
     const existingSocket = get().socket;
@@ -59,6 +73,15 @@ export const useSocketStore = create((set, get) => ({
 
     socket.on("new-message", (message) => {
       const senderId = message.sender?._id;
+
+      // increment unread count if this chat is not currently open
+      if (message.chat !== get().activeChatId) {
+        set((state) => {
+          const unreadCounts = new Map(state.unreadCounts);
+          unreadCounts.set(message.chat, (unreadCounts.get(message.chat) || 0) + 1);
+          return { unreadCounts };
+        });
+      }
 
       // update messages in current chat, replacing optimistic messages
       queryClient.setQueryData(["messages", message.chat], (old) => {
