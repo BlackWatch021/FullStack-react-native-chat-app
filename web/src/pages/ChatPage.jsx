@@ -28,7 +28,7 @@ function ChatPage() {
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  const { socket, setTyping, sendMessage } = useSocketStore();
+  const { socket, setTyping, sendMessage, setActiveChatId } = useSocketStore();
 
   useSocketConnection();
 
@@ -36,6 +36,11 @@ function ChatPage() {
   const { data: messages = [], isLoading: messagesLoading } =
     useMessages(activeChatId);
   const startChatMutation = useGetOrCreateChat();
+
+  // tell socket store which chat is active so it skips unread counting for it
+  useEffect(() => {
+    setActiveChatId(activeChatId);
+  }, [activeChatId, setActiveChatId]);
 
   // scroll to bottom when chat or messages changes
   useEffect(() => {

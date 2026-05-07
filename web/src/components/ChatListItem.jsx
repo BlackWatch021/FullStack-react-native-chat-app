@@ -2,9 +2,10 @@ import { formatTime } from "../lib/utils";
 import { useSocketStore } from "../lib/socket";
 
 export function ChatListItem({ chat, isActive, onClick }) {
-  const { onlineUsers, typingUsers } = useSocketStore();
+  const { onlineUsers, typingUsers, unreadCounts } = useSocketStore();
   const isOnline = onlineUsers.has(chat.participant?._id);
   const isTyping = !!typingUsers.get(chat._id);
+  const unreadCount = unreadCounts.get(chat._id) || 0;
 
   return (
     <button
@@ -27,11 +28,18 @@ export function ChatListItem({ chat, isActive, onClick }) {
           <span className="font-medium text-sm truncate">
             {chat.participant?.name || "Unknown"}
           </span>
-          {chat.lastMessageAt && (
-            <span className="text-xs text-base-content/60">
-              {formatTime(chat.lastMessageAt)}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {chat.lastMessageAt && (
+              <span className="text-xs text-base-content/60">
+                {formatTime(chat.lastMessageAt)}
+              </span>
+            )}
+            {unreadCount > 0 && !isActive && (
+              <span className="bg-amber-500 text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </div>
         </div>
         <p className="text-xs text-base-content/70 truncate mt-0.5">
           {isTyping ? "typing..." : chat.lastMessage?.text || "No messages yet"}
